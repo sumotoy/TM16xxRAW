@@ -1,0 +1,27 @@
+#######################################
+# Syntax Coloring Map for TM16xxRAW
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+TM16xxRAW	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+brightness	KEYWORD2
+getButtons	KEYWORD2
+clearAll	KEYWORD2
+setLed	KEYWORD2
+getColumn	KEYWORD2
+getLed	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+
