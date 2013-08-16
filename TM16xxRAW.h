@@ -15,6 +15,14 @@
 
 #define TMRDTIME  		1 //1 microsecond
 
+#if defined(__arm__) && defined(CORE_TEENSY)						//teensy3
+	#define TEENSY3X
+#elif defined(ARDUINO) && defined(__arm__) && !defined(CORE_TEENSY) //due
+	#define ARDUE
+#else																//arduino 8 bit
+	#define ARDUX
+#endif
+
 class TM16xxRAW
 {
  public:
@@ -24,7 +32,9 @@ class TM16xxRAW
  virtual byte getButtons(void);
  virtual void clearAll(void);
  virtual void setLed(byte col,byte row,byte val);
+ virtual void setLed(byte led,byte val);
  virtual byte getColumn(byte col);
+ virtual byte getLed(byte led);
  
  byte columsState[8];//all led state goes here
  
@@ -41,8 +51,9 @@ class TM16xxRAW
 	void	sendCommand(byte cmd);
 	byte	receiveData(void);
 	void 	sendData(byte address,byte data);
+	void	digitalWriteSpecial(const byte pin,const byte val);
  private:
-	
+	byte	decodeLed(byte led);
  };
 
 
