@@ -1,5 +1,9 @@
 #include "TM16xxRAW.h"
 
+#if defined(ARDUX)
+	#include "../digitalWriteFast/digitalWriteFast.h"
+#endif
+
 TM16xxRAW::TM16xxRAW(const byte datap,const byte clockp,const byte strobep,byte maxr,byte maxc){
 	this->_data_pin = datap;
 	this->_clock_pin = clockp;
@@ -19,7 +23,7 @@ void TM16xxRAW::begin(byte bright,byte displayOn) {
 	if (displayOn > 1) displayOn = 1;
 	this->_brightness = bright;
 	this->_displayOn = displayOn;
-	
+	//set some pin
 	pinMode(this->_data_pin, OUTPUT);
 	pinMode(this->_clock_pin, OUTPUT);
 	pinMode(this->_strobe_pin, OUTPUT);
@@ -40,9 +44,7 @@ void TM16xxRAW::begin(byte bright,byte displayOn) {
 }
 
 void TM16xxRAW::brightness(byte bright){
-	if (bright > 7){
-		bright = 7;
-	}
+	if (bright > 7) bright = 7;
 	this->_brightness = bright;
 	sendCommand(TMDPULSE | (_displayOn ? 8 : 0) | this->_brightness);
 }
@@ -50,12 +52,12 @@ void TM16xxRAW::brightness(byte bright){
 byte TM16xxRAW::getButtons(void) {
 	byte keys = 0;
 	byte i;
-	digitalWrite(this->_strobe_pin, LOW);
+	digitalWriteSpecial(this->_strobe_pin, LOW);
 	send(TMCOM_RK);
 	for (i = 0; i < 4; i++) {
 		keys |= receiveData() << i;
 	}
-	digitalWrite(this->_strobe_pin, HIGH);
+	digitalWriteSpecial(this->_strobe_pin, HIGH);
 	return keys;
 }
 
@@ -82,54 +84,116 @@ void TM16xxRAW::setLed(byte col,byte row,byte val){
 	sendData(col*2,columsState[col]);
 }
 
+
+void TM16xxRAW::setLed(byte led,byte val){
+	byte col = decodeLed(led);
+	led = led - (8*col);
+	if (val == 0){//led off
+		bitClear(columsState[col],led);
+	} else {
+		bitSet(columsState[col],led);
+	}
+	sendData(col*2,columsState[col]);
+}
+
+byte TM16xxRAW::getLed(byte led){
+	byte col = decodeLed(led);
+	led = led - (8*col);
+	return bitRead(columsState[col],led);
+}
+
+
 byte TM16xxRAW::getColumn(byte col) {
 	if (col > 7) col = 7;
 	return columsState[col];
 }
+/* PRIVATE */
+
+byte TM16xxRAW::decodeLed(byte led) {
+	if (led < 8){						//col 0
+		return 0;
+	} else if (led > 7 && led < 16){	//col 1
+		return 1;
+	} else if (led > 15 && led < 24){	//col 2
+		return 2;
+	} else if (led > 23 && led < 32){	//col 3
+		return 3;
+	} else if (led > 31 && led < 40){	//col 4
+		return 4;
+	} else if (led > 39 && led < 48){	//col 5
+		return 5;
+	} else if (led > 47 && led < 56){	//col 6
+		return 6;
+	} else if (led > 55 && led < 64){	//col 7
+		return 7;
+	} else {							//col 7 - error
+		return 7;
+	}
+}
 
 /* LOW LEVEL */
+void TM16xxRAW::digitalWriteSpecial(const byte pin,const byte val) {
+#if defined(ARDUE)
+	digitalWrite(pin,val);
+#else
+	digitalWriteFast(pin,val);
+#endif
+}
+
 
 void TM16xxRAW::send(byte data) {
 	byte i;
 	for (i = 0; i < 8; i++) {
-		digitalWrite(this->_clock_pin, LOW);
-		digitalWrite(this->_data_pin, data & 1 ? HIGH : LOW);
+		digitalWriteSpecial(this->_clock_pin, LOW);
+		digitalWriteSpecial(this->_data_pin, data & 1 ? HIGH : LOW);
 		data >>= 1;
-		digitalWrite(this->_clock_pin, HIGH);
+		digitalWriteSpecial(this->_clock_pin, HIGH);
 	}	
 }
 
 
 void TM16xxRAW::sendCommand(byte cmd){
-	digitalWrite(this->_strobe_pin, LOW);
+	digitalWriteSpecial(this->_strobe_pin, LOW);
 	send(cmd);
-	digitalWrite(this->_strobe_pin, HIGH);
+	digitalWriteSpecial(this->_strobe_pin, HIGH);
 }
 
 byte TM16xxRAW::receiveData(void) {
 	byte temp = 0;
 	byte i;
-	// Pull-up on
+	// data pin will be input
+#if defined(ARDUX)
+	pinModeFast(this->_data_pin, INPUT);
+#else
 	pinMode(this->_data_pin, INPUT);
-	digitalWrite(this->_data_pin, HIGH);
+#endif
+	digitalWriteSpecial(this->_data_pin, HIGH);
 	// get data
 	for (i = 0; i < 8; i++) {
 		temp >>= 1;
-		digitalWrite(this->_clock_pin, LOW);
+		digitalWriteSpecial(this->_clock_pin, LOW);
+#if defined(ARDUX)
+		if (digitalReadFast(this->_data_pin)) temp |= TMDPULSE;
+#else
 		if (digitalRead(this->_data_pin)) temp |= TMDPULSE;
-		digitalWrite(this->_clock_pin, HIGH);
+#endif
+		digitalWriteSpecial(this->_clock_pin, HIGH);
 	}
-	// Pull-up off
+	// put back data pin as out
+#if defined(ARDUX)
+	pinModeFast(this->_data_pin, OUTPUT);
+#else
 	pinMode(this->_data_pin, OUTPUT);
-	digitalWrite(this->_data_pin, LOW);
+#endif
+	digitalWriteSpecial(this->_data_pin, LOW);
 	return temp;
 }
 
 
 void TM16xxRAW::sendData(byte address, byte data) {
 	sendCommand(TMCOM_FA);
-	digitalWrite(this->_strobe_pin, LOW);
+	digitalWriteSpecial(this->_strobe_pin, LOW);
 	send(TMSTARTADRS | address);
 	send(data);
-	digitalWrite(this->_strobe_pin, HIGH);
+	digitalWriteSpecial(this->_strobe_pin, HIGH);
 }
