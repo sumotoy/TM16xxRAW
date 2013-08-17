@@ -29,11 +29,12 @@ GOALS
 FAQ
 
   - Can be used as alternative to ricardo batista one? NO
-  - Can be used in SPI? NO, data pin should switched in input so will interfere with other SPI devices
+  - Can be used in SPI? NO, data pin should works as IN/OUT so will interfere with other SPI devices
   - Can work at 3.3v? Yes and No. Chip works at 5V, you'll need a signal translator (with one channel bidirectional)
   - Keyboard scan interfere with leds? NO. Look at schematics.
   - Can I mix leds, 7seg displays, matrix led, switches, etc? YES, when extra modules are ready.
   - Can I work with led memory map and send all changes one time? YES.
+  - Can I partecipate to development? Of course YES but wait a beta first.
 
 What is working now?
 
