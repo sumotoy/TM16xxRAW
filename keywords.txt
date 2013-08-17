@@ -19,6 +19,7 @@ clearAll	KEYWORD2
 setLed	KEYWORD2
 getColumn	KEYWORD2
 getLed	KEYWORD2
+decodeButton	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
