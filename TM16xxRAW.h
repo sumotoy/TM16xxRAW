@@ -6,6 +6,7 @@
 
 #include "Arduino.h"
 
+//#define DDDEBUG
 
 #define TMCOM_WD     0x40 // write data to display command
 #define TMCOM_RK     0x42 // Read key scanning data command
@@ -29,12 +30,14 @@ class TM16xxRAW
  TM16xxRAW(const byte datap,const byte clockp,const byte strobep,byte maxr=8,byte maxc=8);
  virtual void begin(byte bright = 3,byte displayOn = 1);
  virtual void brightness(byte bright = 3);
- virtual byte getButtons(void);
+/*  virtual byte getButtons(void); */
+ virtual uint16_t getButtons(void);
  virtual void clearAll(void);
  virtual void setLed(byte col,byte row,byte val);
  virtual void setLed(byte led,byte val);
  virtual byte getColumn(byte col);
  virtual byte getLed(byte led);
+ virtual byte decodeButton(uint16_t but);
  
  byte columsState[8];//all led state goes here
  
@@ -54,6 +57,9 @@ class TM16xxRAW
 	void	digitalWriteSpecial(const byte pin,const byte val);
  private:
 	byte	decodeLed(byte led);
+#if defined(DDDEBUG)
+	void   printByte(unsigned int data,byte len);
+#endif
  };
 
 
