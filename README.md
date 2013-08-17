@@ -15,4 +15,27 @@ to write a simpler library that let me freely design my own interface with this 
 This library can be easily integrated with other library and has some extra modules that let you use matrix-led-array, 7seg displays,
 single leds, etc. It's NOT intended to substitute the ricardo batista one that for ready made modules it's still the only one!
 
+GOALS
 
+  - 3 wire operation.
+  - Chainable, 1 extra wire for chip.
+  - Modular, add features you need only.
+  - Usable in other libraries.
+  - Tiny memory footprint.
+  - Brightness freely usable (not only at init).
+  - Internal led 64 bits memory map.
+  - Can update 1 choosed column (8 bit) at time if needed.
+
+FAQ
+
+  - Can be used as alternative to ricardo batista one? NO
+  - Can be used in SPI? NO, data pin should switched in input so will interfere with other SPI devices
+  - Can work at 3.3v? Yes and No. Chip works at 5V, you'll need a signal translator (with one channel bidirectional)
+  - Keyboard scan interfere with leds? NO. Look at schematics.
+  - Can I mix leds, 7seg displays, matrix led, switches, etc? YES, when extra modules are ready.
+  - Can I work with led memory map and send all changes one time? YES.
+
+What is working now?
+
+  - Library it's at an early stage so all basic functions works but far to be optimized.
+  - No schematics yet (but soon).
