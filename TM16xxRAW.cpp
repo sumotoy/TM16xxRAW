@@ -49,7 +49,7 @@ void TM16xxRAW::brightness(byte bright){
 	sendCommand(TMDPULSE | (_displayOn ? 8 : 0) | this->_brightness);
 }
 
-byte TM16xxRAW::getButtons(void) {
+/* byte TM16xxRAW::getButtons(void) {
 	byte keys = 0;
 	byte i;
 	digitalWriteSpecial(this->_strobe_pin, LOW);
@@ -59,9 +59,23 @@ byte TM16xxRAW::getButtons(void) {
 	}
 	digitalWriteSpecial(this->_strobe_pin, HIGH);
 	return keys;
+} */
+
+uint16_t TM16xxRAW::getButtons(void) {
+	uint16_t res = 0;
+	byte i;
+	digitalWriteSpecial(this->_strobe_pin, LOW);
+	send(TMCOM_RK);
+	for (i = 0; i < 4; i++) {
+		byte tempKey = receiveData();
+		if(tempKey != 0) res = res + tempKey + (8*i)+i;
+	}
+#if defined(DDDEBUG)
+	printByte(res,16);
+#endif
+	digitalWriteSpecial(this->_strobe_pin, HIGH);
+	return res;
 }
-
-
 
 void TM16xxRAW::clearAll(void) {
 	byte i;
@@ -106,6 +120,60 @@ byte TM16xxRAW::getLed(byte led){
 byte TM16xxRAW::getColumn(byte col) {
 	if (col > 7) col = 7;
 	return columsState[col];
+}
+
+byte TM16xxRAW::decodeButton(uint16_t but) {
+	if (but == 0x01){
+		return 1;
+	} else if (but == 0x02){
+		return 2;
+	} else if (but == 0x04){
+		return 3;
+	} else if (but == 0x10){
+		return 4;
+	} else if (but == 0x20){
+		return 5;
+	} else if (but == 0x40){
+		return 6;
+	} else if (but == 0x0A){
+		return 7;
+	} else if (but == 0x0B){
+		return 8;
+	} else if (but == 0x0D){
+		return 9;
+	} else if (but == 0x19){
+		return 10;
+	} else if (but == 0x29){
+		return 11;
+	} else if (but == 0x49){
+		return 12;
+	} else if (but == 0x13){
+		return 13;
+	} else if (but == 0x14){
+		return 14;
+	} else if (but == 0x16){
+		return 15;
+	} else if (but == 0x22){
+		return 16;
+	} else if (but == 0x32){
+		return 17;
+	} else if (but == 0x52){
+		return 18;
+	} else if (but == 0x1C){
+		return 19;
+	} else if (but == 0x1D){
+		return 20;
+	} else if (but == 0x1F){
+		return 21;
+	} else if (but == 0x2B){
+		return 22;
+	} else if (but == 0x3B){
+		return 23;
+	} else if (but == 0x5B){
+		return 24;
+	} else {
+		return 0;	
+	}
 }
 /* PRIVATE */
 
@@ -159,33 +227,36 @@ void TM16xxRAW::sendCommand(byte cmd){
 }
 
 byte TM16xxRAW::receiveData(void) {
-	byte temp = 0;
+	byte temp = 0b00000000;
 	byte i;
 	// data pin will be input
 #if defined(ARDUX)
-	pinModeFast(this->_data_pin, INPUT);
+	pinModeFast(this->_data_pin,INPUT);
 #else
-	pinMode(this->_data_pin, INPUT);
+	pinMode(this->_data_pin,INPUT);
 #endif
-	digitalWriteSpecial(this->_data_pin, HIGH);
-	// get data
-	for (i = 0; i < 8; i++) {
+	digitalWriteSpecial(this->_data_pin,HIGH);
+	// get 1 byte
+	for (i = 0;i < 8;i++) {
 		temp >>= 1;
-		digitalWriteSpecial(this->_clock_pin, LOW);
+		digitalWriteSpecial(this->_clock_pin,LOW);
 #if defined(ARDUX)
-		if (digitalReadFast(this->_data_pin)) temp |= TMDPULSE;
+		if (digitalReadFast(this->_data_pin) == 1) temp |= TMDPULSE;
 #else
-		if (digitalRead(this->_data_pin)) temp |= TMDPULSE;
+		if (digitalRead(this->_data_pin) == 1) temp |= TMDPULSE;
 #endif
-		digitalWriteSpecial(this->_clock_pin, HIGH);
+		digitalWriteSpecial(this->_clock_pin,HIGH);
 	}
+#if defined(DDDEBUG)
+	//printByte(temp,8);
+#endif
 	// put back data pin as out
 #if defined(ARDUX)
-	pinModeFast(this->_data_pin, OUTPUT);
+	pinModeFast(this->_data_pin,OUTPUT);
 #else
-	pinMode(this->_data_pin, OUTPUT);
+	pinMode(this->_data_pin,OUTPUT);
 #endif
-	digitalWriteSpecial(this->_data_pin, LOW);
+	digitalWriteSpecial(this->_data_pin,LOW);
 	return temp;
 }
 
@@ -197,3 +268,21 @@ void TM16xxRAW::sendData(byte address, byte data) {
 	send(data);
 	digitalWriteSpecial(this->_strobe_pin, HIGH);
 }
+
+#if defined(DDDEBUG)
+void TM16xxRAW::printByte(unsigned int data,byte len){
+	if (data != 0){
+		for (int i=(len-1); i>=0; i--){
+			if (bitRead(data,i)==1){
+				Serial.print("1");
+			} 
+			else {
+				Serial.print("0");
+			}
+		}
+		Serial.print(" -> 0x");
+		Serial.print(data,HEX);
+		Serial.print("\n");
+	}
+}
+#endif
