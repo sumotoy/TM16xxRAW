@@ -1,9 +1,29 @@
+/*
+                               _                
+ ___  _   _  _ __ ___    ___  | |_  ___   _   _ 
+/ __|| | | || '_ ` _ \  / _ \ | __|/ _ \ | | | |
+\__ \| |_| || | | | | || (_) || |_| (_) || |_| |
+|___/ \__,_||_| |_| |_| \___/  \__|\___/  \__, |
+                                          |___/ 
+
+--------------------------------------------------------------------------------
+A universal library for drive TM1638 - TM1640 chip with any arduino or teensy
+++++++++++++++++++++++++++++++++++
+VERSION 0.1 (19 august 2013)
+++++++++++++++++++++++++++++++++++
+coded by Max MC Costa for s.u.m.o.t.o.y - sumotoy@gmail.com
+note: if you want to use (even parts), inform to the author, thanks!
+--------------------------------------------------------------------------------
+TM1638
+--------------------------------------------------------------------------------
+
+*/
+
 #include "TM16xxRAW.h"
 
-#if defined(ARDUX)
-	#include "../digitalWriteFast/digitalWriteFast.h"
-#endif
-
+/*
+	instantiate library (mostly pins and some vars)
+*/
 TM16xxRAW::TM16xxRAW(const byte datap,const byte clockp,const byte strobep,byte maxr,byte maxc){
 	this->_data_pin = datap;
 	this->_clock_pin = clockp;
@@ -14,15 +34,14 @@ TM16xxRAW::TM16xxRAW(const byte datap,const byte clockp,const byte strobep,byte 
 	this->_maxCol = maxc-1;
 }
 
-
-void TM16xxRAW::begin(byte bright,byte displayOn) {
+/*
+	initiate chip and set it cleared
+	Optionally you can set brightness (default3)
+*/
+void TM16xxRAW::begin(byte bright) {
 	byte i;
-	if (bright > 7){
-		bright = 7;
-	}
-	if (displayOn > 1) displayOn = 1;
+	if (bright > 7) bright = 7;
 	this->_brightness = bright;
-	this->_displayOn = displayOn;
 	//set some pin
 	pinMode(this->_data_pin, OUTPUT);
 	pinMode(this->_clock_pin, OUTPUT);
@@ -43,40 +62,18 @@ void TM16xxRAW::begin(byte bright,byte displayOn) {
 	clearAll();
 }
 
+/*
+	set the chip brightness (from 0 to 7)
+*/
 void TM16xxRAW::brightness(byte bright){
 	if (bright > 7) bright = 7;
 	this->_brightness = bright;
-	sendCommand(TMDPULSE | (_displayOn ? 8 : 0) | this->_brightness);
+	sendCommand(TMDPULSE | (1 ? 8 : 0) | this->_brightness);
 }
 
-/* byte TM16xxRAW::getButtons(void) {
-	byte keys = 0;
-	byte i;
-	digitalWriteSpecial(this->_strobe_pin, LOW);
-	send(TMCOM_RK);
-	for (i = 0; i < 4; i++) {
-		keys |= receiveData() << i;
-	}
-	digitalWriteSpecial(this->_strobe_pin, HIGH);
-	return keys;
-} */
-
-uint16_t TM16xxRAW::getButtons(void) {
-	uint16_t res = 0;
-	byte i;
-	digitalWriteSpecial(this->_strobe_pin, LOW);
-	send(TMCOM_RK);
-	for (i = 0; i < 4; i++) {
-		byte tempKey = receiveData();
-		if(tempKey != 0) res = res + tempKey + (8*i)+i;
-	}
-#if defined(DDDEBUG)
-	printByte(res,16);
-#endif
-	digitalWriteSpecial(this->_strobe_pin, HIGH);
-	return res;
-}
-
+/*
+	clears internal ram and chip
+*/
 void TM16xxRAW::clearAll(void) {
 	byte i;
 	for (i=0;i<8;i++){
@@ -86,98 +83,97 @@ void TM16xxRAW::clearAll(void) {
 }
 
 
-void TM16xxRAW::setLed(byte col,byte row,byte val){
-	if (col > this->_maxCol) col = this->_maxCol;
-	if (row > this->_maxRow) row = this->_maxRow;	
-	if (val == 0){//led off
-		bitClear(columsState[col],row);
-	} 
-	else {
-		bitSet(columsState[col],row);
+/*
+	if no button pushed it's always 0
+	if decoded = false : you get a raw code depends of the button pressed
+	if decoded = true : you get already decoded key number (see decodeButton function)
+*/
+uint16_t TM16xxRAW::getButtons(bool decoded) {
+	uint16_t res = 0;
+	byte i;
+	digitalWriteSpecial(this->_strobe_pin, LOW);
+	send(TMCOM_RK);
+	for (i = 0; i < 4; i++) {
+		byte tempKey = receiveData();
+		if (tempKey > 0) res = res + tempKey + (8*i)+i;
 	}
-	sendData(col*2,columsState[col]);
-}
-
-
-void TM16xxRAW::setLed(byte led,byte val){
-	byte col = decodeLed(led);
-	led = led - (8*col);
-	if (val == 0){//led off
-		bitClear(columsState[col],led);
+	digitalWriteSpecial(this->_strobe_pin, HIGH);
+	if (decoded){
+		return decodeButton(res);
 	} else {
-		bitSet(columsState[col],led);
+		return res;
 	}
-	sendData(col*2,columsState[col]);
 }
 
+
+
+/*
+	set a single led on or off by using column and row address
+*/
+void TM16xxRAW::setLed(byte col,byte row,byte val,bool update){
+	if (col <= this->_maxCol && row <= this->_maxRow) sendLed(col,row,val,update);
+}
+
+/*
+	set a single led on or off by using led number
+*/
+void TM16xxRAW::setLed(byte led,byte val,bool update){
+	if (led < ((this->_maxCol+1)*(this->_maxRow+1))){
+		byte col = detectColumn(led);
+		led = led - (8*col);
+		sendLed(col,led,val,update);
+	}
+}
+
+
+/*
+	get the status of a single led in memory map
+*/
 byte TM16xxRAW::getLed(byte led){
-	byte col = decodeLed(led);
+	byte col = detectColumn(led);
 	led = led - (8*col);
 	return bitRead(columsState[col],led);
 }
 
-
-byte TM16xxRAW::getColumn(byte col) {
-	if (col > 7) col = 7;
-	return columsState[col];
+/*
+	get the status of a single column (byte) in memory map
+*/
+byte TM16xxRAW::getColumn(byte colNum) {
+	if (colNum > this->_maxCol) colNum = this->_maxCol;
+	return columsState[colNum];
 }
 
-byte TM16xxRAW::decodeButton(uint16_t but) {
-	if (but == 0x01){
-		return 1;
-	} else if (but == 0x02){
-		return 2;
-	} else if (but == 0x04){
-		return 3;
-	} else if (but == 0x10){
-		return 4;
-	} else if (but == 0x20){
-		return 5;
-	} else if (but == 0x40){
-		return 6;
-	} else if (but == 0x0A){
-		return 7;
-	} else if (but == 0x0B){
-		return 8;
-	} else if (but == 0x0D){
-		return 9;
-	} else if (but == 0x19){
-		return 10;
-	} else if (but == 0x29){
-		return 11;
-	} else if (but == 0x49){
-		return 12;
-	} else if (but == 0x13){
-		return 13;
-	} else if (but == 0x14){
-		return 14;
-	} else if (but == 0x16){
-		return 15;
-	} else if (but == 0x22){
-		return 16;
-	} else if (but == 0x32){
-		return 17;
-	} else if (but == 0x52){
-		return 18;
-	} else if (but == 0x1C){
-		return 19;
-	} else if (but == 0x1D){
-		return 20;
-	} else if (but == 0x1F){
-		return 21;
-	} else if (but == 0x2B){
-		return 22;
-	} else if (but == 0x3B){
-		return 23;
-	} else if (but == 0x5B){
-		return 24;
-	} else {
-		return 0;	
+/*
+	set an entire column in memory map
+	*note:it doesn't update chip
+*/
+void TM16xxRAW::setColumn(byte colNum,byte colData) {
+	if (colNum <= this->_maxCol) columsState[colNum] = colData;
+}
+
+/*
+	this function send memory map to chip. It can send a single column
+	or if set to 255 all columns in the same time
+*/
+void TM16xxRAW::updateColumn(byte col){
+	if (col == 255){ //update all columns
+		for (byte i=0;i<8;i++){
+			sendData(i*2,columsState[i]);
+		}
+	} else if (col <= this->_maxCol){
+		sendData(col*2,columsState[col]);
 	}
 }
+
+
+
 /* PRIVATE */
 
-byte TM16xxRAW::decodeLed(byte led) {
+/*
+	this function detect the column by give the led
+	note: has to be upgraded since allows only 8 col
+*/
+byte TM16xxRAW::detectColumn(byte led) {
 	if (led < 8){						//col 0
 		return 0;
 	} else if (led > 7 && led < 16){	//col 1
@@ -199,7 +195,84 @@ byte TM16xxRAW::decodeLed(byte led) {
 	}
 }
 
+/*
+	decode raw data from get button and result a easier result
+	You can add key combinations here, just add a case
+*/
+byte TM16xxRAW::decodeButton(uint16_t but) {
+	switch(but){
+		case 0:
+		return 0;
+		case 0x01:
+		return 1;
+		case 0x02:
+		return 2;
+		case 0x04:
+		return 3;
+		case 0x10:
+		return 4;
+		case 0x20:
+		return 5;
+		case 0x40:
+		return 6;
+		case 0x0A:
+		return 7;
+		case 0x0B:
+		return 8;
+		case 0x0D:
+		return 9;
+		case 0x19:
+		return 10;
+		case 0x29:
+		return 11;
+		case 0x49:
+		return 12;
+		case 0x13:
+		return 13;
+		case 0x14:
+		return 14;
+		case 0x16:
+		return 15;
+		case 0x22:
+		return 16;
+		case 0x32:
+		return 17;
+		case 0x52:
+		return 18;
+		case 0x1C:
+		return 19;
+		case 0x1D:
+		return 20;
+		case 0x1F:
+		return 21;
+		case 0x2B:
+		return 22;
+		case 0x3B:
+		return 23;
+		case 0x5B:
+		return 24;
+		default:
+		return 0;
+	}
+}
+
+/*
+	update the state of a single led and optionally update the chip also
+*/
+void TM16xxRAW::sendLed(byte col,byte row,byte val,bool update){
+	if (val == 0){//led off
+		BIT_CLEAR(columsState[col],row);
+	} else {
+		BIT_SET(columsState[col],row);
+	}
+	if (update) sendData(col*2,columsState[col]);
+}
+
 /* LOW LEVEL */
+
+/*
+	depends of cpu used this try to use the fastest way to write port
+*/
 void TM16xxRAW::digitalWriteSpecial(const byte pin,const byte val) {
 #if defined(ARDUE)
 	digitalWrite(pin,val);
@@ -208,7 +281,9 @@ void TM16xxRAW::digitalWriteSpecial(const byte pin,const byte val) {
 #endif
 }
 
-
+/*
+	send a byte to chip
+*/
 void TM16xxRAW::send(byte data) {
 	byte i;
 	for (i = 0; i < 8; i++) {
@@ -219,13 +294,29 @@ void TM16xxRAW::send(byte data) {
 	}	
 }
 
-
-void TM16xxRAW::sendCommand(byte cmd){
+/*
+	send a command to chip
+*/
+void TM16xxRAW::sendCommand(const byte cmd){
 	digitalWriteSpecial(this->_strobe_pin, LOW);
 	send(cmd);
 	digitalWriteSpecial(this->_strobe_pin, HIGH);
 }
 
+/*
+	send led data to chip
+*/
+void TM16xxRAW::sendData(const byte address, byte data) {
+	sendCommand(TMCOM_FA);
+	digitalWriteSpecial(this->_strobe_pin, LOW);
+	send(TMSTARTADRS | address);
+	send(data);
+	digitalWriteSpecial(this->_strobe_pin, HIGH);
+}
+
+/*
+	receive a byte from chip
+*/
 byte TM16xxRAW::receiveData(void) {
 	byte temp = 0b00000000;
 	byte i;
@@ -247,9 +338,6 @@ byte TM16xxRAW::receiveData(void) {
 #endif
 		digitalWriteSpecial(this->_clock_pin,HIGH);
 	}
-#if defined(DDDEBUG)
-	//printByte(temp,8);
-#endif
 	// put back data pin as out
 #if defined(ARDUX)
 	pinModeFast(this->_data_pin,OUTPUT);
@@ -261,16 +349,9 @@ byte TM16xxRAW::receiveData(void) {
 }
 
 
-void TM16xxRAW::sendData(byte address, byte data) {
-	sendCommand(TMCOM_FA);
-	digitalWriteSpecial(this->_strobe_pin, LOW);
-	send(TMSTARTADRS | address);
-	send(data);
-	digitalWriteSpecial(this->_strobe_pin, HIGH);
-}
 
 #if defined(DDDEBUG)
-void TM16xxRAW::printByte(unsigned int data,byte len){
+/* void TM16xxRAW::printByte(unsigned int data,byte len){
 	if (data != 0){
 		for (int i=(len-1); i>=0; i--){
 			if (bitRead(data,i)==1){
@@ -284,5 +365,5 @@ void TM16xxRAW::printByte(unsigned int data,byte len){
 		Serial.print(data,HEX);
 		Serial.print("\n");
 	}
-}
+} */
 #endif
