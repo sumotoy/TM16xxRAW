@@ -8,45 +8,28 @@ TM16xxRAW tm(3,4,5);
 volatile byte pButton = 0;
 volatile byte pOldButton = 255;
 
-/* -----------------------SETUP ------------------------*/
 void setup() {
   Serial.begin(38400);
-  //optional:brightness(0:7),displayOn(0=off,1=on)
+  //optional:brightness(0:7))
   tm.begin();
-  //column,row,state(0,1)
-  tm.setLed(0,1,1);
 }
 
-/* ---------------------- LOOP -------------------------*/
 void loop() {
   randomLed2();
-  if (buttonFired()){
-    Serial.println("Click!");
-  } 
-}
-
-
-boolean buttonFired(){
-  uint16_t but = tm.getButtons();
-  if (but != 0) {
-    pButton = tm.decodeButton(but);
-    if (pButton != 0){
-      if (pOldButton != pButton){
-        pOldButton = pButton;
-        Serial.println(pButton,DEC);
-        return true;
+  uint16_t pButton = tm.getButtons(true);
+  if (pButton != 0) {
+    if (pOldButton != pButton){
+      pOldButton = pButton;
+      if (tm.getLed(pButton-1) == 0){
+        tm.setLed(pButton-1,1,true);
+      } 
+      else {
+        tm.setLed(pButton-1,0,true);
       }
-    } 
-    else {
-      return false;
+      Serial.println(pButton,DEC);
     }
   }
-  else {
-    return false;
-  }
 }
-
-
 
 //this use column,row led addressing
 void randomLed1(){
@@ -59,7 +42,7 @@ void randomLed1(){
   else {
     val = 1;
   }
-  tm.setLed(col,row,val);
+  tm.setLed(col,row,val,true);
   delay(5);
 }
 
@@ -70,7 +53,7 @@ using 8x8 matrix you have 64 led addressable.
  so led 0 to 7 will be in the column 0 and so on.
  */
 void randomLed2(){
-  byte led = random(0,63);
+  byte led = random(24,63);
   byte val = 0;
   if (tm.getLed(led) == 1){
     val = 0;
@@ -78,7 +61,7 @@ void randomLed2(){
   else {
     val = 1;
   }
-  tm.setLed(led,val);  
+  tm.setLed(led,val,true);  
   delay(5);
 }
 
