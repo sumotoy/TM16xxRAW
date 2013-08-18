@@ -1,5 +1,23 @@
+/*
+                               _                
+ ___  _   _  _ __ ___    ___  | |_  ___   _   _ 
+/ __|| | | || '_ ` _ \  / _ \ | __|/ _ \ | | | |
+\__ \| |_| || | | | | || (_) || |_| (_) || |_| |
+|___/ \__,_||_| |_| |_| \___/  \__|\___/  \__, |
+                                          |___/ 
 
+--------------------------------------------------------------------------------
+A universal library for drive TM1638 - TM1640 chip with any arduino or teensy
+++++++++++++++++++++++++++++++++++
+VERSION 0.1 (19 august 2013)
+++++++++++++++++++++++++++++++++++
+coded by Max MC Costa for s.u.m.o.t.o.y - sumotoy@gmail.com
+note: if you want to use (even parts), inform to the author, thanks!
+--------------------------------------------------------------------------------
+TM1638
+--------------------------------------------------------------------------------
 
+*/
 
 #ifndef TM16XXRAW_h
 #define TM16XXRAW_h
@@ -8,13 +26,14 @@
 
 //#define DDDEBUG
 
-#define TMCOM_WD     0x40 // write data to display command
-#define TMCOM_RK     0x42 // Read key scanning data command
-#define TMCOM_FA     0x44 // Fixed Address (0x40 auto increase)
-#define TMDPULSE     0x80 // 1/16 pulse (bit3 0)
-#define TMSTARTADRS  0xC0 // address 0xc0 -> 0xCF
+const byte TMCOM_WD 	= 0x40;
+const byte TMCOM_RK		= 0x42;
+const byte TMCOM_FA		= 0x44;
+const byte TMDPULSE		= 0x80;
+const byte TMSTARTADRS	= 0xC0;
+const byte TMRDTIME		= 1; 
 
-#define TMRDTIME  		1 //1 microsecond
+
 
 #if defined(__arm__) && defined(CORE_TEENSY)						//teensy3
 	#define TEENSY3X
@@ -22,45 +41,48 @@
 	#define ARDUE
 #else																//arduino 8 bit
 	#define ARDUX
+	#include "../digitalWriteFast/digitalWriteFast.h"
 #endif
+
+#define BIT_SET(a,b) ((a) |= (1<<(b)))
+#define BIT_CLEAR(a,b) ((a) &= ~(1<<(b)))
 
 class TM16xxRAW
 {
  public:
  TM16xxRAW(const byte datap,const byte clockp,const byte strobep,byte maxr=8,byte maxc=8);
- virtual void begin(byte bright = 3,byte displayOn = 1);
+ virtual void begin(byte bright = 3);
  virtual void brightness(byte bright = 3);
-/*  virtual byte getButtons(void); */
- virtual uint16_t getButtons(void);
+ virtual uint16_t getButtons(bool decoded=false);
  virtual void clearAll(void);
- virtual void setLed(byte col,byte row,byte val);
- virtual void setLed(byte led,byte val);
- virtual byte getColumn(byte col);
+ virtual void setLed(byte col,byte row,byte val,bool update);
+ virtual void setLed(byte led,byte val,bool update);
+ virtual byte getColumn(byte colNum);
+ virtual void setColumn(byte colNum,byte colData);
+ virtual void updateColumn(byte col=255);
  virtual byte getLed(byte led);
- virtual byte decodeButton(uint16_t but);
- 
- byte columsState[8];//all led state goes here
+
  
  protected:
 	byte _data_pin;
 	byte _clock_pin;
 	byte _strobe_pin;
 	byte _brightness;
-	byte _displayOn;
 	byte _maxRow;
 	byte _maxCol;
 	
 	void	send(byte data);
-	void	sendCommand(byte cmd);
+	void	sendCommand(const byte cmd);
 	byte	receiveData(void);
-	void 	sendData(byte address,byte data);
+	void 	sendData(const byte address,byte data);
 	void	digitalWriteSpecial(const byte pin,const byte val);
+	 byte columsState[8];//all led state goes here
  private:
-	byte	decodeLed(byte led);
-#if defined(DDDEBUG)
+	byte	detectColumn(byte led);
+	byte 	decodeButton(uint16_t but);
+	void	sendLed(byte col,byte row,byte val,bool update);
+/* #if defined(DDDEBUG)
 	void   printByte(unsigned int data,byte len);
-#endif
+#endif */
  };
-
-
 #endif
