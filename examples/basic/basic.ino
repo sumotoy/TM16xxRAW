@@ -5,8 +5,8 @@
 TM16xxRAW tm(3,4,5);
 
 
-volatile byte pButton = 0;
-volatile byte pOldButton = 255;
+volatile uint32_t pbutton = 0;
+
 
 void setup() {
   Serial.begin(38400);
@@ -16,20 +16,13 @@ void setup() {
 
 void loop() {
   randomLed2();
-  uint16_t pButton = tm.getButtons(true);
-  if (pButton != 0) {
-    if (pOldButton != pButton){
-      pOldButton = pButton;
-      if (tm.getLed(pButton-1) == 0){
-        tm.setLed(pButton-1,1,true);
-      } 
-      else {
-        tm.setLed(pButton-1,0,true);
-      }
-      Serial.println(pButton,DEC);
-    }
+  uint32_t pbutton = tm.getButtons();
+  if (pbutton != 0) {
+    Serial.println(pbutton,DEC);
   }
 }
+
+
 
 //this use column,row led addressing
 void randomLed1(){
