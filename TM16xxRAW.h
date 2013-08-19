@@ -9,7 +9,7 @@
 --------------------------------------------------------------------------------
 A universal library for drive TM1638 - TM1640 chip with any arduino or teensy
 ++++++++++++++++++++++++++++++++++
-VERSION 0.1 (19 august 2013)
+VERSION 0.2 (20 august 2013)
 ++++++++++++++++++++++++++++++++++
 coded by Max MC Costa for s.u.m.o.t.o.y - sumotoy@gmail.com
 note: if you want to use (even parts), inform to the author, thanks!
@@ -53,7 +53,7 @@ class TM16xxRAW
  TM16xxRAW(const byte datap,const byte clockp,const byte strobep,byte maxr=8,byte maxc=8);
  virtual void begin(byte bright = 3);
  virtual void brightness(byte bright = 3);
- virtual uint16_t getButtons(bool decoded=false);
+ virtual uint32_t getButtons();
  virtual void clearAll(void);
  virtual void setLed(byte col,byte row,byte val,bool update);
  virtual void setLed(byte led,byte val,bool update);
@@ -71,18 +71,17 @@ class TM16xxRAW
 	byte _maxRow;
 	byte _maxCol;
 	
-	void	send(byte data);
-	void	sendCommand(const byte cmd);
-	byte	receiveData(void);
-	void 	sendData(const byte address,byte data);
-	void	digitalWriteSpecial(const byte pin,const byte val);
-	 byte columsState[8];//all led state goes here
+	void		send(byte data);
+	void		sendCommand(const byte cmd);
+	void 		sendData(const byte address,byte data);
+	void		digitalWriteSpecial(const byte pin,const byte val);
+	byte 		columsState[8];//all led state goes here
+	uint32_t 	switchState;//all switch state goes here
  private:
 	byte	detectColumn(byte led);
-	byte 	decodeButton(uint16_t but);
 	void	sendLed(byte col,byte row,byte val,bool update);
-/* #if defined(DDDEBUG)
-	void   printByte(unsigned int data,byte len);
-#endif */
+#if defined(DDDEBUG)
+	void   printByte(uint32_t data,byte len);
+#endif 
  };
 #endif
