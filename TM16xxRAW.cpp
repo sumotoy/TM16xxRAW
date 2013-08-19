@@ -9,7 +9,7 @@
 --------------------------------------------------------------------------------
 A universal library for drive TM1638 - TM1640 chip with any arduino or teensy
 ++++++++++++++++++++++++++++++++++
-VERSION 0.1 (19 august 2013)
+VERSION 0.2 (20 august 2013)
 ++++++++++++++++++++++++++++++++++
 coded by Max MC Costa for s.u.m.o.t.o.y - sumotoy@gmail.com
 note: if you want to use (even parts), inform to the author, thanks!
@@ -36,30 +36,34 @@ TM16xxRAW::TM16xxRAW(const byte datap,const byte clockp,const byte strobep,byte 
 
 /*
 	initiate chip and set it cleared
-	Optionally you can set brightness (default3)
+	Optionally you can set brightness (default = 3)
 */
 void TM16xxRAW::begin(byte bright) {
 	byte i;
 	if (bright > 7) bright = 7;
 	this->_brightness = bright;
+	for (i=0;i<8;i++){//reset led memory map
+		this->columsState[i] = 0b00000000;
+	}
+	this->switchState = 0b000000000000000000000000;//reset switch map (only 24 bits used)
 	//set some pin
 	pinMode(this->_data_pin, OUTPUT);
 	pinMode(this->_clock_pin, OUTPUT);
 	pinMode(this->_strobe_pin, OUTPUT);
 	digitalWrite(this->_strobe_pin, HIGH);//strobe should be hi
 	digitalWrite(this->_clock_pin, HIGH);//clock should be hi
-  
+	// chip init
 	sendCommand(TMCOM_WD);
-	
 	brightness(bright);
-	
 	digitalWrite(this->_strobe_pin, LOW);
 	sendCommand(TMSTARTADRS);
 	for (i=0;i<16;i++){
 		sendCommand(0x00);
 	}
 	digitalWrite(this->_strobe_pin, HIGH);
-	clearAll();
+	// end chip init
+	clearAll(); // clear all leds
+	
 }
 
 /*
@@ -77,32 +81,47 @@ void TM16xxRAW::brightness(byte bright){
 void TM16xxRAW::clearAll(void) {
 	byte i;
 	for (i=0;i<8;i++){
-		columsState[i] = 0b00000000;
-		sendData(i*2,columsState[i]);
+		this->columsState[i] = 0b00000000;
+		sendData(i*2,this->columsState[i]);
 	}
 }
 
 
 /*
 	if no button pushed it's always 0
-	if decoded = false : you get a raw code depends of the button pressed
-	if decoded = true : you get already decoded key number (see decodeButton function)
+	gives back a 32bit var with the map of all switch pressed
 */
-uint16_t TM16xxRAW::getButtons(bool decoded) {
-	uint16_t res = 0;
+uint32_t TM16xxRAW::getButtons() {
 	byte i;
+	byte j;
+	uint32_t out = 0;
 	digitalWriteSpecial(this->_strobe_pin, LOW);
 	send(TMCOM_RK);
-	for (i = 0; i < 4; i++) {
-		byte tempKey = receiveData();
-		if (tempKey > 0) res = res + tempKey + (8*i)+i;
+	for (i = 0;i < 4;i++) {
+#if defined(ARDUX)
+		pinModeFast(this->_data_pin,INPUT);// set data pin as input
+#else
+		pinMode(this->_data_pin,INPUT);
+#endif
+		digitalWriteSpecial(this->_data_pin,HIGH);// pullup data pin
+		for (j = 0;j < 8;j++) { //loop to get 1 byte (create clock stream and read data)
+			digitalWriteSpecial(this->_clock_pin,LOW);
+#if defined(ARDUX)
+			if (digitalReadFast(this->_data_pin) == 1) bitSet(out,j+(8*i));
+#else
+			if (digitalRead(this->_data_pin) == 1) bitSet(out,j+(8*i));
+#endif
+			digitalWriteSpecial(this->_clock_pin,HIGH);	
+		}
+#if defined(ARDUX)
+		pinModeFast(this->_data_pin,OUTPUT);// put back data pin as output
+#else
+		pinMode(this->_data_pin,OUTPUT);
+#endif
+		digitalWriteSpecial(this->_data_pin,LOW);// pull down data pin
 	}
 	digitalWriteSpecial(this->_strobe_pin, HIGH);
-	if (decoded){
-		return decodeButton(res);
-	} else {
-		return res;
-	}
+	return out;
 }
 
 
@@ -132,7 +151,7 @@ void TM16xxRAW::setLed(byte led,byte val,bool update){
 byte TM16xxRAW::getLed(byte led){
 	byte col = detectColumn(led);
 	led = led - (8*col);
-	return bitRead(columsState[col],led);
+	return bitRead(this->columsState[col],led);
 }
 
 /*
@@ -140,7 +159,7 @@ byte TM16xxRAW::getLed(byte led){
 */
 byte TM16xxRAW::getColumn(byte colNum) {
 	if (colNum > this->_maxCol) colNum = this->_maxCol;
-	return columsState[colNum];
+	return this->columsState[colNum];
 }
 
 /*
@@ -148,7 +167,7 @@ byte TM16xxRAW::getColumn(byte colNum) {
 	*note:it doesn't update chip
 */
 void TM16xxRAW::setColumn(byte colNum,byte colData) {
-	if (colNum <= this->_maxCol) columsState[colNum] = colData;
+	if (colNum <= this->_maxCol) this->columsState[colNum] = colData;
 }
 
 /*
@@ -158,10 +177,10 @@ void TM16xxRAW::setColumn(byte colNum,byte colData) {
 void TM16xxRAW::updateColumn(byte col){
 	if (col == 255){ //update all columns
 		for (byte i=0;i<8;i++){
-			sendData(i*2,columsState[i]);
+			sendData(i*2,this->columsState[i]);
 		}
 	} else if (col <= this->_maxCol){
-		sendData(col*2,columsState[col]);
+		sendData(col*2,this->columsState[col]);
 	}
 }
 
@@ -196,76 +215,15 @@ byte TM16xxRAW::detectColumn(byte led) {
 }
 
 /*
-	decode raw data from get button and result a easier result
-	You can add key combinations here, just add a case
-*/
-byte TM16xxRAW::decodeButton(uint16_t but) {
-	switch(but){
-		case 0:
-		return 0;
-		case 0x01:
-		return 1;
-		case 0x02:
-		return 2;
-		case 0x04:
-		return 3;
-		case 0x10:
-		return 4;
-		case 0x20:
-		return 5;
-		case 0x40:
-		return 6;
-		case 0x0A:
-		return 7;
-		case 0x0B:
-		return 8;
-		case 0x0D:
-		return 9;
-		case 0x19:
-		return 10;
-		case 0x29:
-		return 11;
-		case 0x49:
-		return 12;
-		case 0x13:
-		return 13;
-		case 0x14:
-		return 14;
-		case 0x16:
-		return 15;
-		case 0x22:
-		return 16;
-		case 0x32:
-		return 17;
-		case 0x52:
-		return 18;
-		case 0x1C:
-		return 19;
-		case 0x1D:
-		return 20;
-		case 0x1F:
-		return 21;
-		case 0x2B:
-		return 22;
-		case 0x3B:
-		return 23;
-		case 0x5B:
-		return 24;
-		default:
-		return 0;
-	}
-}
-
-/*
 	update the state of a single led and optionally update the chip also
 */
 void TM16xxRAW::sendLed(byte col,byte row,byte val,bool update){
 	if (val == 0){//led off
-		BIT_CLEAR(columsState[col],row);
+		BIT_CLEAR(this->columsState[col],row);
 	} else {
-		BIT_SET(columsState[col],row);
+		BIT_SET(this->columsState[col],row);
 	}
-	if (update) sendData(col*2,columsState[col]);
+	if (update) sendData(col*2,this->columsState[col]);
 }
 
 /* LOW LEVEL */
@@ -314,44 +272,10 @@ void TM16xxRAW::sendData(const byte address, byte data) {
 	digitalWriteSpecial(this->_strobe_pin, HIGH);
 }
 
-/*
-	receive a byte from chip
-*/
-byte TM16xxRAW::receiveData(void) {
-	byte temp = 0b00000000;
-	byte i;
-	// data pin will be input
-#if defined(ARDUX)
-	pinModeFast(this->_data_pin,INPUT);
-#else
-	pinMode(this->_data_pin,INPUT);
-#endif
-	digitalWriteSpecial(this->_data_pin,HIGH);
-	// get 1 byte
-	for (i = 0;i < 8;i++) {
-		temp >>= 1;
-		digitalWriteSpecial(this->_clock_pin,LOW);
-#if defined(ARDUX)
-		if (digitalReadFast(this->_data_pin) == 1) temp |= TMDPULSE;
-#else
-		if (digitalRead(this->_data_pin) == 1) temp |= TMDPULSE;
-#endif
-		digitalWriteSpecial(this->_clock_pin,HIGH);
-	}
-	// put back data pin as out
-#if defined(ARDUX)
-	pinModeFast(this->_data_pin,OUTPUT);
-#else
-	pinMode(this->_data_pin,OUTPUT);
-#endif
-	digitalWriteSpecial(this->_data_pin,LOW);
-	return temp;
-}
-
 
 
 #if defined(DDDEBUG)
-/* void TM16xxRAW::printByte(unsigned int data,byte len){
+void TM16xxRAW::printByte(uint32_t data,byte len){
 	if (data != 0){
 		for (int i=(len-1); i>=0; i--){
 			if (bitRead(data,i)==1){
@@ -365,5 +289,5 @@ byte TM16xxRAW::receiveData(void) {
 		Serial.print(data,HEX);
 		Serial.print("\n");
 	}
-} */
+} 
 #endif
