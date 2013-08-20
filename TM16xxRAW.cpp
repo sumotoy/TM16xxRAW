@@ -9,7 +9,7 @@
 --------------------------------------------------------------------------------
 A universal library for drive TM1638 - TM1640 chip with any arduino or teensy
 ++++++++++++++++++++++++++++++++++
-VERSION 0.2 (20 august 2013)
+VERSION 0.3 (21 august 2013)
 ++++++++++++++++++++++++++++++++++
 coded by Max MC Costa for s.u.m.o.t.o.y - sumotoy@gmail.com
 note: if you want to use (even parts), inform to the author, thanks!
@@ -45,22 +45,22 @@ void TM16xxRAW::begin(byte bright) {
 	for (i=0;i<8;i++){//reset led memory map
 		this->columsState[i] = 0b00000000;
 	}
-	this->switchState = 0b000000000000000000000000;//reset switch map (only 24 bits used)
+	//this->switchState = 0b000000000000000000000000;//reset switch map (only 24 bits used)
 	//set some pin
 	pinMode(this->_data_pin, OUTPUT);
 	pinMode(this->_clock_pin, OUTPUT);
 	pinMode(this->_strobe_pin, OUTPUT);
-	digitalWrite(this->_strobe_pin, HIGH);//strobe should be hi
-	digitalWrite(this->_clock_pin, HIGH);//clock should be hi
+	digitalWriteSpecial(this->_strobe_pin, HIGH);//strobe should be hi
+	digitalWriteSpecial(this->_clock_pin, HIGH);//clock should be hi
 	// chip init
 	sendCommand(TMCOM_WD);
 	brightness(bright);
-	digitalWrite(this->_strobe_pin, LOW);
+	digitalWriteSpecial(this->_strobe_pin, LOW);
 	sendCommand(TMSTARTADRS);
 	for (i=0;i<16;i++){
 		sendCommand(0x00);
 	}
-	digitalWrite(this->_strobe_pin, HIGH);
+	digitalWriteSpecial(this->_strobe_pin, HIGH);
 	// end chip init
 	clearAll(); // clear all leds
 	
@@ -72,7 +72,7 @@ void TM16xxRAW::begin(byte bright) {
 void TM16xxRAW::brightness(byte bright){
 	if (bright > 7) bright = 7;
 	this->_brightness = bright;
-	sendCommand(TMDPULSE | (1 ? 8 : 0) | this->_brightness);
+	sendCommand(TMDPULSE | this->_brightness);
 }
 
 /*
