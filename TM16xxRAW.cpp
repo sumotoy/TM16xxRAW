@@ -290,23 +290,3 @@ void TM16xxRAW::sendData(const byte address, byte data) {
 	send(data);
 	digitalWriteSpecial(this->_strobe_pin, HIGH);
 }
-
-
-
-#if defined(DDDEBUG)
-void TM16xxRAW::printByte(uint32_t data,byte len){
-	if (data != 0){
-		for (int i=(len-1); i>=0; i--){
-			if (bitRead(data,i)==1){
-				Serial.print("1");
-			} 
-			else {
-				Serial.print("0");
-			}
-		}
-		Serial.print(" -> 0x");
-		Serial.print(data,HEX);
-		Serial.print("\n");
-	}
-} 
-#endif
