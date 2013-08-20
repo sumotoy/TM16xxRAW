@@ -81,8 +81,6 @@ class TM16xxRAW
  private:
 	byte	detectColumn(byte led);
 	void	sendLed(byte col,byte row,byte val,bool update);
-#if defined(DDDEBUG)
-	void   printByte(uint32_t data,byte len);
-#endif 
+
  };
 #endif
