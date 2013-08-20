@@ -14,11 +14,17 @@ void setup() {
   tm.begin();
 }
 
+
 void loop() {
   randomLed2();
   uint32_t pbutton = tm.getButtons();
   if (pbutton != 0) {
-    Serial.println(pbutton,DEC);
+    for (byte i=24; i>=0; i--){
+      if (bitRead(pbutton,i) == 1){
+        Serial.println(i+1,DEC);
+        break;
+      }
+    }
   }
 }
 
@@ -57,6 +63,3 @@ void randomLed2(){
   tm.setLed(led,val,true);  
   delay(5);
 }
-
-
-
