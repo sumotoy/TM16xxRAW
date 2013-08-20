@@ -95,6 +95,7 @@ uint32_t TM16xxRAW::getButtons() {
 	byte i;
 	byte j;
 	uint32_t out = 0;
+	byte plus =0;
 	digitalWriteSpecial(this->_strobe_pin, LOW);
 	send(TMCOM_RK);
 	for (i = 0;i < 4;i++) {
@@ -106,10 +107,28 @@ uint32_t TM16xxRAW::getButtons() {
 		digitalWriteSpecial(this->_data_pin,HIGH);// pullup data pin
 		for (j = 0;j < 8;j++) { //loop to get 1 byte (create clock stream and read data)
 			digitalWriteSpecial(this->_clock_pin,LOW);
+			plus = j+(8*i);
+			
+			if (i == 0 && j < 4){
+			} else if (i == 0 && j > 3){
+				plus = plus - 1;
+			} else if (i == 1 && j < 4){
+				plus = plus - 2;
+			} else if (i == 1 && j > 3){
+				plus = plus - 3;
+			} else if (i == 2 && j < 4){
+				plus = plus - 4;
+			} else if (i == 2 && j > 3){	
+				plus = plus - 5;
+			} else if (i == 3 && j < 4){	
+				plus = plus - 6;
+			} else {	
+				plus = plus - 7;
+			}
 #if defined(ARDUX)
-			if (digitalReadFast(this->_data_pin) == 1) bitSet(out,j+(8*i));
+			if (digitalReadFast(this->_data_pin) == 1) bitSet(out,plus);
 #else
-			if (digitalRead(this->_data_pin) == 1) bitSet(out,j+(8*i));
+			if (digitalRead(this->_data_pin) == 1) bitSet(out,plus);
 #endif
 			digitalWriteSpecial(this->_clock_pin,HIGH);	
 		}
