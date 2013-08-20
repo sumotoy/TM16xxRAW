@@ -9,7 +9,7 @@
 --------------------------------------------------------------------------------
 A universal library for drive TM1638 - TM1640 chip with any arduino or teensy
 ++++++++++++++++++++++++++++++++++
-VERSION 0.2 (20 august 2013)
+VERSION 0.3 (21 august 2013)
 ++++++++++++++++++++++++++++++++++
 coded by Max MC Costa for s.u.m.o.t.o.y - sumotoy@gmail.com
 note: if you want to use (even parts), inform to the author, thanks!
@@ -29,7 +29,7 @@ TM1638
 const byte TMCOM_WD 	= 0x40;
 const byte TMCOM_RK		= 0x42;
 const byte TMCOM_FA		= 0x44;
-const byte TMDPULSE		= 0x80;
+const byte TMDPULSE		= 0x88;//0x80 off
 const byte TMSTARTADRS	= 0xC0;
 const byte TMRDTIME		= 1; 
 
@@ -46,6 +46,7 @@ const byte TMRDTIME		= 1;
 
 #define BIT_SET(a,b) ((a) |= (1<<(b)))
 #define BIT_CLEAR(a,b) ((a) &= ~(1<<(b)))
+
 
 class TM16xxRAW
 {
@@ -76,7 +77,7 @@ class TM16xxRAW
 	void 		sendData(const byte address,byte data);
 	void		digitalWriteSpecial(const byte pin,const byte val);
 	byte 		columsState[8];//all led state goes here
-	uint32_t 	switchState;//all switch state goes here
+	//uint32_t 	switchState;//all switch state goes here
  private:
 	byte	detectColumn(byte led);
 	void	sendLed(byte col,byte row,byte val,bool update);
