@@ -9,28 +9,37 @@ I've noticed that apparently no debounce it's needed.
 
 #include <TM16xxRAW.h>
 
-
+//Instantiate the library
 //data_pin,clock_pin,strobe_pin
 TM16xxRAW tm(3,4,5);
 
 
 volatile byte but = 0;
 volatile byte obut = 1;
+
+//the following used just for graphic feedback example
 unsigned long blinkTime = 0;
+byte count = 24;
 
 void setup() {
-  //Serial.begin(38400);
+  // init chip
   //optional:brightness(0:7))
   tm.begin();
 }
 
-byte count = 24;
+
 
 void loop() {
-  //randomLed2();
-  if (millis() -  blinkTime > 15){
-    blinkTime = millis();
-    ledefx1(count);
+  //this is a simple visual feedback routine. It will drive leds from 24 to 63
+  //in a kinda loop to dimostrate that keyscan is not so intrusive
+  if (millis() -  blinkTime > 15){//we run out of time
+    blinkTime = millis();//reset
+    for (byte i=3;i<8;i++){//turn off leds of 6 remain column first
+      tm.setColumn(i,0);
+    }
+    tm.setLed(count,1,false);//set a led with absolute addressing method
+    tm.updateColumn();//update all colums!
+    //fix the count var
     if (count > 63){
       count = 24;
     } 
@@ -38,83 +47,33 @@ void loop() {
       count++;
     }
   }
-
-  uint32_t allButtons = tm.getButtons();
-  if (allButtons != 0) {
-    if (obut != but){
-      for (byte i=24; i>=0; i--){
-        if (bitRead(allButtons,i) == 1){
+  //-------------------------------------------keyscan starts HERE
+  uint32_t allButtons = tm.getButtons();// get button state
+  if (allButtons != 0) {  // one or more button pressed
+    if (obut != but){    // this prevent to trigger the same button at every loop cycle
+    /* a simple routine that identify button pressed (and exit immediately)
+    if you want detect more buttons at once you need another routine here
+    */
+      for (byte i=24; i>=0; i--){//getButtons give back a 32 bit var but only 24  used!!!     
+        if (bitRead(allButtons,i) == 1){//found button pressed by checking bit
           but = i+1;
           obut = but;
+          // this simple routine it's optional and only for visual feedback
+          // it checks a led in led memory map to see if it's on or off and invert it's value
           if (tm.getLed(i)){
             tm.setLed(i,0,true);
           } 
           else {
             tm.setLed(i,1,true);
           }
-          //Serial.println(i+1,DEC);
-          break;
-        }
-      }
+          break;//as I said before, this will exit for loop
+        }//end if
+      }//end for
     }
   } 
-  else {
-    but = 0;
+  else { // no buttons pressed
+    but = 0;  
   }
-
-
-}
-
-
-
-//this use column,row led addressing
-void randomLed1(){
-  byte col = random(0,8);
-  byte row = random(0,8);
-  byte val = 0;
-  if (bitRead(tm.getColumn(col),row) == 1){
-    val = 0;
-  } 
-  else {
-    val = 1;
-  }
-  tm.setLed(col,row,val,true);
-  delay(5);
-}
-
-//this use just led addressing.
-/*
-using 8x8 matrix you have 64 led addressable.
- you can use any number from 0 to 63, the led are addressed as colums
- so led 0 to 7 will be in the column 0 and so on.
- */
-void randomLed2(){
-  byte led = random(24,63);
-  byte val = 0;
-  if (tm.getLed(led) == 1){
-    val = 0;
-  } 
-  else {
-    val = 1;
-  }
-  tm.setLed(led,val,true);  
-  delay(5);
-}
-
-void ledefx1(byte count){
-  //  if (tm.getLed(count) == 1){
-  //    tm.setLed(count,0,true);  
-  //  } 
-  //  else {
-  //    tm.setLed(count,1,true);  
-  //  }
-
-
-  for (byte i=3;i<8;i++){
-    tm.setColumn(i,0);
-  }
-  tm.setLed(count,1,false);
-  tm.updateColumn();
 }
 
 
