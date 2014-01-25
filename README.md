@@ -26,6 +26,7 @@ GOALS
   - Brightness freely usable (not only at init).
   - Internal led 64 bits memory map.
   - Can update 1 choosed column (8 bit) at time if needed.
+  - Compatible with Arduinos, Due, Teensy3.x (with level converter)
 
 FAQ
 
