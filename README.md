@@ -13,8 +13,8 @@ Library can handle 64 (even little more) leds individually with overall brightne
 In addition an extension of the library will let you use 7Seg displays (when ready).
 
 
-If you buy from ebay one of the chinese assembled modules, go for <b>Ricardo Batista</b> library!
-If you buy a TM1638/40 chip and you want to use in your projects <b>take a look this library</b>.
+If you buy from ebay one of the chinese assembled modules, go for <b>Ricardo Batista</b> library!<br>
+If you buy a TM1638/40 chip and you want to use in your projects <b>take a look this library</b>.<br>
 
 GOALS
 
