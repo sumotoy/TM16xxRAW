@@ -10,6 +10,7 @@
 A universal library for drive TM1638 - TM1640 chip with any arduino or teensy
 ++++++++++++++++++++++++++++++++++
 VERSION 0.3 (21 august 2013)
+VERSION 0.5 (25 january 2014)
 ++++++++++++++++++++++++++++++++++
 coded by Max MC Costa for s.u.m.o.t.o.y - sumotoy@gmail.com
 note: if you want to use (even parts), inform to the author, thanks!
@@ -290,3 +291,23 @@ void TM16xxRAW::sendData(const byte address, byte data) {
 	send(data);
 	digitalWriteSpecial(this->_strobe_pin, HIGH);
 }
+
+
+
+#if defined(DDDEBUG)
+void TM16xxRAW::printByte(uint32_t data,byte len){
+	if (data != 0){
+		for (int i=(len-1); i>=0; i--){
+			if (bitRead(data,i)==1){
+				Serial.print("1");
+			} 
+			else {
+				Serial.print("0");
+			}
+		}
+		Serial.print(" -> 0x");
+		Serial.print(data,HEX);
+		Serial.print("\n");
+	}
+} 
+#endif

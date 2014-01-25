@@ -10,6 +10,7 @@
 A universal library for drive TM1638 - TM1640 chip with any arduino or teensy
 ++++++++++++++++++++++++++++++++++
 VERSION 0.3 (21 august 2013)
+VERSION 0.5 (25 january 2014)
 ++++++++++++++++++++++++++++++++++
 coded by Max MC Costa for s.u.m.o.t.o.y - sumotoy@gmail.com
 note: if you want to use (even parts), inform to the author, thanks!
@@ -44,9 +45,10 @@ const byte TMRDTIME		= 1;
 	#include "../digitalWriteFast/digitalWriteFast.h"
 #endif
 
+/*
 #define BIT_SET(a,b) ((a) |= (1<<(b)))
 #define BIT_CLEAR(a,b) ((a) &= ~(1<<(b)))
-
+*/
 
 class TM16xxRAW
 {
@@ -81,6 +83,8 @@ class TM16xxRAW
  private:
 	byte	detectColumn(byte led);
 	void	sendLed(byte col,byte row,byte val,bool update);
-
+#if defined(DDDEBUG)
+	void   printByte(uint32_t data,byte len);
+#endif 
  };
 #endif
