@@ -36,7 +36,7 @@ const byte TMRDTIME		= 1;
 
 
 
-#if defined(__arm__) && defined(CORE_TEENSY)						//teensy3
+#if defined(__MK20DX128__) || defined(__MK20DX256__)				//teensy3.x
 	#define TEENSY3X
 #elif defined(ARDUINO) && defined(__arm__) && !defined(CORE_TEENSY) //due
 	#define ARDUE
