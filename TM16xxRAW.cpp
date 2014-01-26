@@ -239,9 +239,9 @@ byte TM16xxRAW::detectColumn(byte led) {
 */
 void TM16xxRAW::sendLed(byte col,byte row,byte val,bool update){
 	if (val == 0){//led off
-		BIT_CLEAR(this->columsState[col],row);
+		bitClear(this->columsState[col],row);
 	} else {
-		BIT_SET(this->columsState[col],row);
+		bitSet(this->columsState[col],row);
 	}
 	if (update) sendData(col*2,this->columsState[col]);
 }

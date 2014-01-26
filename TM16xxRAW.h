@@ -45,10 +45,6 @@ const byte TMRDTIME		= 1;
 	#include "../digitalWriteFast/digitalWriteFast.h"
 #endif
 
-/*
-#define BIT_SET(a,b) ((a) |= (1<<(b)))
-#define BIT_CLEAR(a,b) ((a) &= ~(1<<(b)))
-*/
 
 class TM16xxRAW
 {
@@ -67,19 +63,18 @@ class TM16xxRAW
 
  
  protected:
-	byte _data_pin;
-	byte _clock_pin;
-	byte _strobe_pin;
-	byte _brightness;
-	byte _maxRow;
-	byte _maxCol;
+	byte 	_data_pin;
+	byte 	_clock_pin;
+	byte 	_strobe_pin;
+	byte 	_brightness;
+	byte 	_maxRow;
+	byte 	_maxCol;
 	
-	void		send(byte data);
-	void		sendCommand(const byte cmd);
-	void 		sendData(const byte address,byte data);
-	void		digitalWriteSpecial(const byte pin,const byte val);
-	byte 		columsState[8];//all led state goes here
-	//uint32_t 	switchState;//all switch state goes here
+	void			send(byte data);
+	void			sendCommand(const byte cmd);
+	void 			sendData(const byte address,byte data);
+	void			digitalWriteSpecial(const byte pin,const byte val);
+	volatile byte 	columsState[8];//all led state goes here
  private:
 	byte	detectColumn(byte led);
 	void	sendLed(byte col,byte row,byte val,bool update);
