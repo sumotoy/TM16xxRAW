@@ -39,5 +39,7 @@ FAQ
 
 What is working now?
 
-  - Library not optimized but working.
-  - No schematics yet (but soon), if you are in the hurry take a look to the chip datasheet!
+  - Library not optimized but working.<br>
+
+Here's a schematics that works with the library:<br>
+![image](http://i1189.photobucket.com/albums/z437/theamra/github/TM1638_small_schem-1.png "schem small")<br>
