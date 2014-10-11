@@ -27,6 +27,7 @@ GOALS
   - Internal led 64 bits memory map.
   - Can update 1 choosed column (8 bit) at time if needed.
   - Compatible with Arduinos, Due, Teensy3.x (with level converter)
+  - Compatible with Energia IDE (stellaris, etc.) with level converter - Not Tested!
 
 FAQ
 
