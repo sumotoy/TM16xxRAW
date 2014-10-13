@@ -2,7 +2,7 @@ TM16xxRAW
 =========
 
 
-An easy universal library for TM1638/40 chip (<b>not</b> the board usually selled on ebay).
+An easy universal library for TM1638/40 chip (<b>not</b> the board usually selled on ebay).<br>
 **Warning**: Energia support just as it's basic stage and not tested. It compiles but doesn't mean that will works! So please wait I test it (and prolly fix) before use it with Energia MCU's!<br>
 
 TM1638 it's a popular chip used on several modules (99% made in china) that you can easy find on ebay normally populated
