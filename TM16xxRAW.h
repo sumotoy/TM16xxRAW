@@ -11,7 +11,6 @@ A universal library for drive TM1638 - TM1640 chip with any arduino or teensy
 ++++++++++++++++++++++++++++++++++
 VERSION 0.3 (21 august 2013)
 VERSION 0.5 (25 january 2014)
-VERSION 0.6 (10 october 2014) - Energia IDE compatibility(?) for Stellaris, etc.
 ++++++++++++++++++++++++++++++++++
 coded by Max MC Costa for s.u.m.o.t.o.y - sumotoy@gmail.com
 note: if you want to use (even parts), inform to the author, thanks!
@@ -24,11 +23,7 @@ TM1638
 #ifndef TM16XXRAW_h
 #define TM16XXRAW_h
 
-#if defined(ENERGIA) // LaunchPad, FraunchPad and StellarPad specific
-#include "Energia.h"
-#else
 #include "Arduino.h"
-#endif
 
 //#define DDDEBUG
 
@@ -41,12 +36,10 @@ const byte TMRDTIME		= 1;
 
 
 
-#if defined(__MK20DX128__) || defined(__MK20DX256__)				//teensy3.x
+#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)//teensy3.x or Teensy LC
 	#define TEENSY3X
 #elif defined(ARDUINO) && defined(__arm__) && !defined(CORE_TEENSY) //due
 	#define ARDUE
-#elif defined(ENERGIA)
-	#define ENERGIAX
 #else																//arduino 8 bit
 	#define ARDUX
 	#include "../digitalWriteFast/digitalWriteFast.h"

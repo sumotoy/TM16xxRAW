@@ -11,7 +11,6 @@ A universal library for drive TM1638 - TM1640 chip with any arduino or teensy
 ++++++++++++++++++++++++++++++++++
 VERSION 0.3 (21 august 2013)
 VERSION 0.5 (25 january 2014)
-VERSION 0.6 (12 october 2014) compatibility with Energia IDE
 ++++++++++++++++++++++++++++++++++
 coded by Max MC Costa for s.u.m.o.t.o.y - sumotoy@gmail.com
 note: if you want to use (even parts), inform to the author, thanks!
@@ -253,7 +252,7 @@ void TM16xxRAW::sendLed(byte col,byte row,byte val,bool update){
 	depends of cpu used this try to use the fastest way to write port
 */
 void TM16xxRAW::digitalWriteSpecial(const byte pin,const byte val) {
-#if defined(ARDUE) || defined(ENERGIA)
+#if defined(ARDUE)
 	digitalWrite(pin,val);
 #else
 	digitalWriteFast(pin,val);
